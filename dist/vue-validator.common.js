@@ -450,7 +450,14 @@ function Validate (Vue) {
 
     bind: function bind() {
       var el = this.el;
+
       var containerVm = this.getContainerVm();
+      if (process.env.NODE_ENV !== 'production' && !containerVm) {
+        warn('v-validate need to use into validator element directive: ' + '(e.g. <validator name="validator">' + '<input type="text" v-validate:field1="[\'required\']">' + '</validator>).');
+        this._invalid = true;
+        return;
+      }
+      var validatorName = containerVm.$options._validator;
 
       if (process.env.NODE_ENV !== 'production' && el.__vue__) {
         warn('v-validate="' + this.expression + '" cannot be ' + 'used on an instance root element.');
@@ -460,13 +467,6 @@ function Validate (Vue) {
 
       if (process.env.NODE_ENV !== 'production' && (el.hasAttribute('v-if') || el.hasAttribute('v-for'))) {
         warn('v-validate cannot be used `v-if` or `v-for` build-in terminal directive ' + 'on an element. these is wrapped with `<template>` or other tags: ' + '(e.g. <validator name="validator">' + '<template v-if="hidden">' + '<input type="text" v-validate:field1="[\'required\']">' + '</template>' + '</validator>).');
-        this._invalid = true;
-        return;
-      }
-
-      var validatorName = containerVm.$options._validator;
-      if (process.env.NODE_ENV !== 'production' && !validatorName) {
-        warn('v-validate need to use into validator element directive: ' + '(e.g. <validator name="validator">' + '<input type="text" v-validate:field1="[\'required\']">' + '</validator>).');
         this._invalid = true;
         return;
       }
