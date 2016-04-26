@@ -33,7 +33,7 @@ export default function (Vue) {
     paramWatchers: {
       detectBlur (val, old) {
         if (this._invalid) { return }
-        this.validation.detectBlur = this.isDetectBlur(val) 
+        this.validation.detectBlur = this.isDetectBlur(val)
         this.validator.validate(this.field)
       },
 
@@ -46,6 +46,7 @@ export default function (Vue) {
 
     bind () {
       const el = this.el
+      const containerVm = this.getContainerVm()
 
       if ((process.env.NODE_ENV !== 'production') && el.__vue__) {
         warn('v-validate="' + this.expression + '" cannot be '
@@ -54,7 +55,7 @@ export default function (Vue) {
         return
       }
 
-      if ((process.env.NODE_ENV !== 'production') 
+      if ((process.env.NODE_ENV !== 'production')
           && (el.hasAttribute('v-if') || el.hasAttribute('v-for'))) {
         warn('v-validate cannot be used `v-if` or `v-for` build-in terminal directive '
           + 'on an element. these is wrapped with `<template>` or other tags: '
@@ -67,7 +68,7 @@ export default function (Vue) {
         return
       }
 
-      let validatorName = this.vm.$options._validator
+      let validatorName = containerVm.$options._validator
       if ((process.env.NODE_ENV !== 'production') && !validatorName) {
         warn('v-validate need to use into validator element directive: '
           + '(e.g. <validator name="validator">'
@@ -122,13 +123,14 @@ export default function (Vue) {
 
     setupValidate (name, model, filters) {
       const params = this.params
-      let validator = this.validator = this.vm._validatorMaps[name]
+      const containerVm = this.getContainerVm()
+      let validator = this.validator = containerVm._validatorMaps[name]
 
       this.field = _.camelize(this.arg ? this.arg : params.field)
 
       this.validation = validator.manageValidation(
-        this.field, model, this.vm, this.frag.node, this._scope, filters,
-        this.isDetectBlur(params.detectBlur), 
+        this.field, model, containerVm, this.frag.node, this._scope, filters,
+        this.isDetectBlur(params.detectBlur),
         this.isDetectChange(params.detectChange)
       )
 
@@ -145,7 +147,7 @@ export default function (Vue) {
 
       this.onBlur = _.bind(validation.listener, validation)
       _.on(el, 'blur', this.onBlur)
-      if ((el.type === 'radio' 
+      if ((el.type === 'radio'
           || el.tagName === 'SELECT') && !model) {
         this.onChange = _.bind(validation.listener, validation)
         _.on(el, 'change', this.onChange)
@@ -193,7 +195,7 @@ export default function (Vue) {
       if (this.validator && this.validation) {
         let el = this.frag.node
 
-        this.params.group 
+        this.params.group
           && this.validator.removeGroupValidation(this.params.group, this.field)
 
         this.validator.unmanageValidation(this.field, el)
@@ -245,19 +247,19 @@ export default function (Vue) {
     },
 
     isDetectBlur (detectBlur) {
-      return detectBlur === undefined 
+      return detectBlur === undefined
         || detectBlur === 'on' || detectBlur === true
     },
 
     isDetectChange (detectChange) {
-      return detectChange === undefined 
+      return detectChange === undefined
         || detectChange === 'on' || detectChange === true
     },
 
     isInitialNoopValidation (initial) {
       return initial === 'off' || initial === false
     },
-    
+
     shimNode (node) {
       let ret = node
       if (hasTextareaCloneBug) {
@@ -271,6 +273,17 @@ export default function (Vue) {
         }
       }
       return ret
+    },
+
+    getContainerVm() {
+      let containerVm = this.vm;
+      while (containerVm) {
+        if (containerVm.$options._validator) {
+          break;
+        }
+        containerVm = containerVm.$parent;
+      }
+      return containerVm;
     }
   })
 }
