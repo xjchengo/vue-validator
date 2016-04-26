@@ -1,4 +1,4 @@
-import { warn, each } from '../util'
+import util, { warn, each } from '../util'
 
 
 export default function (Vue) {
@@ -279,6 +279,10 @@ export default function (Vue) {
       let containerVm = this.vm;
       while (containerVm) {
         if (containerVm.$options._validator) {
+          if (containerVm != this.vm) {
+            let validator = containerVm._validatorMaps[containerVm.$options._validator]
+            util.Vue.util.defineReactive(this.vm, validator.name, validator._scope)
+          }
           break;
         }
         containerVm = containerVm.$parent;
