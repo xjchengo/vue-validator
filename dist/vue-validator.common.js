@@ -658,15 +658,21 @@ function Validate (Vue) {
     },
     getContainerVm: function getContainerVm() {
       var containerVm = this.vm;
+      var parentVms = [];
       while (containerVm) {
+        parentVms.push(containerVm);
         if (containerVm.$options._validator) {
-          if (containerVm != this.vm) {
-            var validator = containerVm._validatorMaps[containerVm.$options._validator];
-            exports$1.Vue.util.defineReactive(this.vm, validator.name, validator._scope);
-          }
           break;
         }
         containerVm = containerVm.$parent;
+      }
+      if (containerVm) {
+        (function () {
+          var validator = containerVm._validatorMaps[containerVm.$options._validator];
+          each(parentVms, function (parentVm) {
+            exports$1.Vue.util.defineReactive(parentVm, validator.name, validator._scope);
+          });
+        })();
       }
       return containerVm;
     }
