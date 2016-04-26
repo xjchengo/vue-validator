@@ -46,7 +46,17 @@ export default function (Vue) {
 
     bind () {
       const el = this.el
-      const containerVm = this.getContainerVm()
+
+      let containerVm = this.getContainerVm()
+      if ((process.env.NODE_ENV !== 'production') && !containerVm) {
+        warn('v-validate need to use into validator element directive: '
+          + '(e.g. <validator name="validator">'
+          + '<input type="text" v-validate:field1="[\'required\']">'
+          + '</validator>).')
+        this._invalid = true
+        return
+      }
+      let validatorName = containerVm.$options._validator
 
       if ((process.env.NODE_ENV !== 'production') && el.__vue__) {
         warn('v-validate="' + this.expression + '" cannot be '
@@ -63,16 +73,6 @@ export default function (Vue) {
           + '<template v-if="hidden">'
           + '<input type="text" v-validate:field1="[\'required\']">'
           + '</template>'
-          + '</validator>).')
-        this._invalid = true
-        return
-      }
-
-      let validatorName = containerVm.$options._validator
-      if ((process.env.NODE_ENV !== 'production') && !validatorName) {
-        warn('v-validate need to use into validator element directive: '
-          + '(e.g. <validator name="validator">'
-          + '<input type="text" v-validate:field1="[\'required\']">'
           + '</validator>).')
         this._invalid = true
         return
