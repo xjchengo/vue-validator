@@ -454,6 +454,7 @@ var validators = Object.freeze({
 
       bind: function bind() {
         var el = this.el;
+        var containerVm = this.getContainerVm();
 
         if ('development' !== 'production' && el.__vue__) {
           warn('v-validate="' + this.expression + '" cannot be ' + 'used on an instance root element.');
@@ -467,7 +468,7 @@ var validators = Object.freeze({
           return;
         }
 
-        var validatorName = this.vm.$options._validator;
+        var validatorName = containerVm.$options._validator;
         if ('development' !== 'production' && !validatorName) {
           warn('v-validate need to use into validator element directive: ' + '(e.g. <validator name="validator">' + '<input type="text" v-validate:field1="[\'required\']">' + '</validator>).');
           this._invalid = true;
@@ -524,11 +525,12 @@ var validators = Object.freeze({
       },
       setupValidate: function setupValidate(name, model, filters) {
         var params = this.params;
-        var validator = this.validator = this.vm._validatorMaps[name];
+        var containerVm = this.getContainerVm();
+        var validator = this.validator = containerVm._validatorMaps[name];
 
         this.field = _.camelize(this.arg ? this.arg : params.field);
 
-        this.validation = validator.manageValidation(this.field, model, this.vm, this.frag.node, this._scope, filters, this.isDetectBlur(params.detectBlur), this.isDetectChange(params.detectChange));
+        this.validation = validator.manageValidation(this.field, model, containerVm, this.frag.node, this._scope, filters, this.isDetectBlur(params.detectBlur), this.isDetectChange(params.detectChange));
 
         params.group && validator.addGroupValidation(params.group, this.field);
 
@@ -657,6 +659,16 @@ var validators = Object.freeze({
           }
         }
         return ret;
+      },
+      getContainerVm: function getContainerVm() {
+        var containerVm = this.vm;
+        while (containerVm) {
+          if (containerVm.$options._validator) {
+            break;
+          }
+          containerVm = containerVm.$parent;
+        }
+        return containerVm;
       }
     });
   }
