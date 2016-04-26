@@ -664,6 +664,10 @@ var validators = Object.freeze({
         var containerVm = this.vm;
         while (containerVm) {
           if (containerVm.$options._validator) {
+            if (containerVm != this.vm) {
+              var validator = containerVm._validatorMaps[containerVm.$options._validator];
+              exports$1.Vue.util.defineReactive(this.vm, validator.name, validator._scope);
+            }
             break;
           }
           containerVm = containerVm.$parent;
