@@ -455,6 +455,14 @@ var validators = Object.freeze({
       bind: function bind() {
         var el = this.el;
 
+        var containerVm = this.getContainerVm();
+        if ('development' !== 'production' && !containerVm) {
+          warn('v-validate need to use into validator element directive: ' + '(e.g. <validator name="validator">' + '<input type="text" v-validate:field1="[\'required\']">' + '</validator>).');
+          this._invalid = true;
+          return;
+        }
+        var validatorName = containerVm.$options._validator;
+
         if ('development' !== 'production' && el.__vue__) {
           warn('v-validate="' + this.expression + '" cannot be ' + 'used on an instance root element.');
           this._invalid = true;
@@ -463,13 +471,6 @@ var validators = Object.freeze({
 
         if ('development' !== 'production' && (el.hasAttribute('v-if') || el.hasAttribute('v-for'))) {
           warn('v-validate cannot be used `v-if` or `v-for` build-in terminal directive ' + 'on an element. these is wrapped with `<template>` or other tags: ' + '(e.g. <validator name="validator">' + '<template v-if="hidden">' + '<input type="text" v-validate:field1="[\'required\']">' + '</template>' + '</validator>).');
-          this._invalid = true;
-          return;
-        }
-
-        var validatorName = this.vm.$options._validator;
-        if ('development' !== 'production' && !validatorName) {
-          warn('v-validate need to use into validator element directive: ' + '(e.g. <validator name="validator">' + '<input type="text" v-validate:field1="[\'required\']">' + '</validator>).');
           this._invalid = true;
           return;
         }
@@ -522,13 +523,20 @@ var validators = Object.freeze({
           return { model: raw };
         }
       },
+
+
+      // use current component's vm as fallback
+      _getScope: function _getScope() {
+        return this._scope || this.vm;
+      },
       setupValidate: function setupValidate(name, model, filters) {
         var params = this.params;
-        var validator = this.validator = this.vm._validatorMaps[name];
+        var containerVm = this.getContainerVm();
+        var validator = this.validator = containerVm._validatorMaps[name];
 
         this.field = _.camelize(this.arg ? this.arg : params.field);
 
-        this.validation = validator.manageValidation(this.field, model, this.vm, this.frag.node, this._scope, filters, this.isDetectBlur(params.detectBlur), this.isDetectChange(params.detectChange));
+        this.validation = validator.manageValidation(this.field, model, containerVm, this.frag.node, this._getScope(), filters, this.isDetectBlur(params.detectBlur), this.isDetectChange(params.detectChange));
 
         params.group && validator.addGroupValidation(params.group, this.field);
 
@@ -657,6 +665,20 @@ var validators = Object.freeze({
           }
         }
         return ret;
+      },
+      getContainerVm: function getContainerVm() {
+        var containerVm = this.vm;
+        while (containerVm) {
+          if (containerVm.$options._validator) {
+            if (containerVm !== this.vm) {
+              var validator = containerVm._validatorMaps[containerVm.$options._validator];
+              exports$1.Vue.util.defineReactive(this.vm, validator.name, validator._scope);
+            }
+            break;
+          }
+          containerVm = containerVm.$parent;
+        }
+        return containerVm;
       }
     });
   }
