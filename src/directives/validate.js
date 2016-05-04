@@ -121,6 +121,11 @@ export default function (Vue) {
       }
     },
 
+    // use current component's vm as fallback
+    _getScope () {
+      return this._scope || this.vm
+    },
+
     setupValidate (name, model, filters) {
       const params = this.params
       const containerVm = this.getContainerVm()
@@ -129,7 +134,7 @@ export default function (Vue) {
       this.field = _.camelize(this.arg ? this.arg : params.field)
 
       this.validation = validator.manageValidation(
-        this.field, model, containerVm, this.frag.node, this._scope, filters,
+        this.field, model, containerVm, this.frag.node, this._getScope(), filters,
         this.isDetectBlur(params.detectBlur),
         this.isDetectChange(params.detectChange)
       )
@@ -276,18 +281,18 @@ export default function (Vue) {
     },
 
     getContainerVm() {
-      let containerVm = this.vm;
+      let containerVm = this.vm
       while (containerVm) {
         if (containerVm.$options._validator) {
-          if (containerVm != this.vm) {
+          if (containerVm !== this.vm) {
             let validator = containerVm._validatorMaps[containerVm.$options._validator]
             util.Vue.util.defineReactive(this.vm, validator.name, validator._scope)
           }
-          break;
+          break
         }
-        containerVm = containerVm.$parent;
+        containerVm = containerVm.$parent
       }
-      return containerVm;
+      return containerVm
     }
   })
 }
